@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mideast News Reader</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #161920;
+    --surface2: #1e2230;
+    --border: #2a2f45;
+    --accent: #c8a96e;
+    --accent2: #7eb8c9;
+    --danger: #e05a5a;
+    --text: #e8e4d9;
+    --text-muted: #7a8099;
+    --font: 'Noto Sans JP', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .logo span {
+    color: var(--text-muted);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4caf82;
+    margin-left: auto;
+    box-shadow: 0 0 6px #4caf82;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Main */
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  /* API Key input */
+  .api-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="text"], input[type="password"], textarea {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  textarea {
+    font-family: var(--font);
+    font-size: 13px;
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  button {
+    background: var(--accent);
+    color: #0d0f14;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button.secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  button.danger {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+
+  /* URL input */
+  .url-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  /* Keywords */
+  .keywords-section {
+    margin-bottom: 20px;
+  }
+
+  .keywords-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .keyword-btn {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .keyword-btn.active {
+    background: var(--accent);
+    color: #0d0f14;
+    border-color: var(--accent);
+  }
+
+  .keyword-btn:hover:not(.active) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Result card */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .result-card.visible { display: block; }
+
+  .card-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .impact-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.08em;
+  }
+
+  .impact-high { background: #e05a5a22; color: #e05a5a; border: 1px solid #e05a5a44; }
+  .impact-mid  { background: #c8a96e22; color: var(--accent); border: 1px solid #c8a96e44; }
+  .impact-low  { background: #7a809922; color: var(--text-muted); border: 1px solid #2a2f45; }
+
+  .source-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    letter-spacing: 0.06em;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 500;
+    padding: 14px 16px 0;
+    color: var(--text);
+  }
+
+  .card-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 6px 16px 14px;
+    font-family: var(--mono);
+  }
+
+  /* Pages */
+  .pages {
+    display: flex;
+    gap: 4px;
+    padding: 0 16px 14px;
+  }
+
+  .page-tab {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+
+  .page-tab.active {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--accent);
+  }
+
+  .page-content {
+    padding: 0 16px 16px;
+    display: none;
+  }
+
+  .page-content.active { display: block; }
+
+  /* Summary text */
+  .summary-text {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    border-left: 3px solid var(--border);
+  }
+
+  .colloquial-text {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    margin-bottom: 14px;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    border-left: 3px solid var(--accent);
+  }
+
+  .colloquial-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  /* Audio controls */
+  .audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--surface2);
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+
+  .play-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #0d0f14;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+  }
+
+  .play-btn:hover { opacity: 0.85; }
+
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  .duration-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* Loading */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 32px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+
+  .loading.visible { display: block; }
+
+  .spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error */
+  .error-msg {
+    background: #e05a5a11;
+    border: 1px solid #e05a5a44;
+    border-radius: 6px;
+    padding: 12px;
+    color: var(--danger);
+    font-size: 12px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .error-msg.visible { display: block; }
+
+  /* Score detail */
+  .score-detail {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.9;
+  }
+
+  .score-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .score-row:last-child { border-bottom: none; }
+
+  .score-val {
+    font-family: var(--mono);
+    color: var(--accent);
+  }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+  .ai-question-section {
+    background: var(--surface);
+    border: 1px solid #7eb8c944;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .ai-question-section.visible { display: block; }
+  .ai-question-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #7eb8c922;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #7eb8c908;
+  }
+  .ai-label { font-family: var(--mono); font-size: 10px; color: var(--accent2); letter-spacing: 0.12em; }
+  .ai-warning {
+    font-size: 10px; color: var(--accent);
+    background: #c8a96e15; border: 1px solid #c8a96e33;
+    border-radius: 4px; padding: 3px 8px; margin-left: auto;
+    font-family: var(--mono); letter-spacing: 0.06em;
+  }
+  .ai-question-body { padding: 14px 16px; }
+  .ai-input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .ai-messages { display: flex; flex-direction: column; gap: 10px; }
+  .ai-msg { border-radius: 6px; padding: 10px 12px; font-size: 13px; line-height: 1.7; }
+  .ai-msg.user {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); align-self: flex-end; max-width: 90%;
+  }
+  .ai-msg.assistant { background: #7eb8c910; border: 1px solid #7eb8c933; color: var(--text); }
+  .ai-msg-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; margin-bottom: 5px; }
+  .ai-msg.user .ai-msg-label { color: var(--text-muted); }
+  .ai-msg.assistant .ai-msg-label { color: var(--accent2); }
+  .ai-disclaimer {
+    font-size: 10px; color: var(--accent); font-family: var(--mono);
+    padding: 8px 12px; background: #c8a96e0a;
+    border-top: 1px solid #c8a96e22; letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MIDEAST<span>/</span>NEWS<span>/</span>READER</div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);">v0.1 prototype</div>
+  <div class="status-dot"></div>
+</header>
+
+<main>
+
+  <!-- API Key -->
+  <div class="api-section">
+    <div class="section-label">Anthropic API Key</div>
+    <div class="input-row">
+      <input type="password" id="apiKey" placeholder="sk-ant-..." />
+      <button onclick="saveKey()">保存</button>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">このキーはブラウザのメモリにのみ保存されます。</div>
+  </div>
+
+  <!-- URL input -->
+  <div class="url-section">
+    <div class="section-label">記事URL</div>
+    <div class="input-row" style="margin-bottom:10px;">
+      <input type="text" id="articleUrl" placeholder="https://www.aljazeera.com/..." />
+      <button onclick="analyzeArticle()" id="analyzeBtn">解析</button>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);">
+      対応メディア：アルジャジーラ / イランインターナショナル / アルモニタ / エルサレム・ポスト / ミドルイーストモニター / タイムズオブイスラエル
+    </div>
+  </div>
+
+  <!-- Keywords -->
+  <div class="keywords-section">
+    <div class="section-label">追加カテゴリキーワード <span style="color:var(--text-muted);font-size:9px;">（タップで優先度UP）</span></div>
+    <div class="keywords-wrap" id="keywordsWrap">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Loading -->
+  <div class="loading" id="loadingEl">
+    <div class="spinner"></div><br>
+    記事を解析中...
+  </div>
+
+  <!-- Result -->
+  <div class="result-card" id="resultCard">
+
+    <div class="card-header">
+      <div class="impact-badge" id="impactBadge">—</div>
+      <div class="source-tag" id="sourceTag">—</div>
+      <div style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--text-muted)" id="uploadedAt">—</div>
+    </div>
+
+    <div class="card-title" id="cardTitle">—</div>
+    <div class="card-meta" id="cardMeta">—</div>
+
+    <!-- Page tabs -->
+    <div class="pages">
+      <div class="page-tab active" onclick="switchPage(1)">Page 1</div>
+      <div class="page-tab" id="page2Tab" onclick="switchPage(2)" style="display:none">Page 2</div>
+    </div>
+
+    <!-- Page 1 -->
+    <div class="page-content active" id="page1">
+
+      <!-- Audio -->
+      <div class="audio-controls">
+        <button class="play-btn" id="playBtn" onclick="toggleSpeech()">▶</button>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="duration-label" id="durationLabel">0:00</div>
+      </div>
+
+      <div class="colloquial-label">▌口語要約（音声読み上げ用）</div>
+      <div class="colloquial-text" id="colloquialText">—</div>
+
+      <hr>
+
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text-muted);margin-bottom:8px;">▌原文準拠 要約</div>
+      <div class="summary-text" id="summaryText">—</div>
+
+    </div>
+
+    <!-- Page 2 (high impact only) -->
+    <div class="page-content" id="page2">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text-muted);margin-bottom:12px;">▌詳細分析（高インパクト記事）</div>
+      <div class="score-detail" id="detailText">—</div>
+      <hr>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text-muted);margin-bottom:8px;">▌インパクトスコア内訳</div>
+      <div id="scoreBreakdown"></div>
+    </div>
+
+  </div>
+
+  <!-- AI Question Section -->
+  <div class="ai-question-section" id="aiQuestionSection">
+    <div class="ai-question-header">
+      <div class="ai-label">🤖 AIに質問する</div>
+      <div class="ai-warning">⚠️ AI背景知識を含む</div>
+    </div>
+    <div class="ai-question-body">
+      <div class="ai-messages" id="aiMessages"></div>
+      <div class="ai-input-row" style="margin-top:12px;">
+        <input type="text" id="aiQuestionInput" placeholder="この記事について質問..." />
+        <button onclick="askAI()" id="aiAskBtn">送信</button>
+      </div>
+      <!-- 外部アプリボタン（質問入力後に表示） -->
+      <div id="externalBtns" style="display:none;margin-top:10px;display:none;gap:8px;flex-wrap:wrap;">
+        <button onclick="copyPrompt()" class="secondary" style="font-size:11px;">📋 プロンプトをコピー</button>
+        <button onclick="openClaude()" class="secondary" style="font-size:11px;border-color:#c8a96e44;color:var(--accent);">🟡 Claudeで開く</button>
+        <button onclick="openChatGPT()" class="secondary" style="font-size:11px;border-color:#7eb8c944;color:var(--accent2);">💬 ChatGPTで開く</button>
+      </div>
+    </div>
+    <div class="ai-disclaimer">※ この欄の回答はAIの背景知識を含みます。原文準拠の要約とは区別してご参照ください。</div>
+  </div>
+
+</main>
+
+<script>
+// --- State ---
+let apiKey = '';
+let activeKeywords = new Set();
+let speechUtterance = null;
+let isSpeaking = false;
+let speechTimer = null;
+let elapsedSeconds = 0;
+let currentPage = 1;
+let lastQuestion = ''; // 最後に送った質問を保持
+let articleContext = ''; // 記事本文を保持
+let aiChatHistory = []; // 質問履歴
+
+// 誤読修正マップ（TTS向け）
+const MISREAD_MAP = {
+  '対中': 'たいちゅう',
+  '中東': 'ちゅうとう',
+  '中継': 'ちゅうけい',
+  '中断': 'ちゅうだん',
+  '中止': 'ちゅうし',
+  '中枢': 'ちゅうすう',
+  '仲介': 'ちゅうかい',
+  '中立': 'ちゅうりつ',
+  '制裁': 'せいさい',
+  '撤退': 'てったい',
+  '核': 'かく',
+};
+
+function applyMisreadFix(text) {
+  let result = text;
+  for (const [wrong, correct] of Object.entries(MISREAD_MAP)) {
+    result = result.replaceAll(wrong, correct);
+  }
+  return result;
+}
+
+const DEFAULT_KEYWORDS = [
+  'ガザ','イラン','イスラエル','ヒズボラ','ハマス',
+  '核','停戦','人道支援','サウジアラビア','トルコ',
+  'シリア','イエメン','フーシ派','米軍','国連'
+];
+
+// --- Init ---
+function init() {
+  const saved = sessionStorage.getItem('mnr_api');
+  if (saved) { apiKey = saved; document.getElementById('apiKey').value = '••••••••••••'; }
+  renderKeywords();
+}
+
+function renderKeywords() {
+  const wrap = document.getElementById('keywordsWrap');
+  wrap.innerHTML = '';
+  DEFAULT_KEYWORDS.forEach(kw => {
+    const btn = document.createElement('button');
+    btn.className = 'keyword-btn' + (activeKeywords.has(kw) ? ' active' : '');
+    btn.textContent = kw;
+    btn.onclick = () => toggleKeyword(kw, btn);
+    wrap.appendChild(btn);
+  });
+}
+
+function toggleKeyword(kw, btn) {
+  if (activeKeywords.has(kw)) {
+    activeKeywords.delete(kw);
+    btn.classList.remove('active');
+  } else {
+    activeKeywords.add(kw);
+    btn.classList.add('active');
+  }
+}
+
+function saveKey() {
+  const val = document.getElementById('apiKey').value.trim();
+  if (!val || val.startsWith('•')) return;
+  apiKey = val;
+  sessionStorage.setItem('mnr_api', val);
+  document.getElementById('apiKey').value = '••••••••••••';
+  showError('APIキーを保存しました', false);
+}
+
+// --- Analyze ---
+async function analyzeArticle() {
+  const url = document.getElementById('articleUrl').value.trim();
+  if (!url) return showError('URLを入力してください');
+  if (!apiKey) return showError('APIキーを先に保存してください');
+
+  setLoading(true);
+  hideError();
+  document.getElementById('resultCard').classList.remove('visible');
+
+  const kwList = [...activeKeywords].join('、') || 'なし';
+
+  // Fetch article via allorigins proxy to bypass CORS
+  let articleText = '';
+  try {
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const proxyRes = await fetch(proxyUrl);
+    const proxyData = await proxyRes.json();
+    // Strip HTML tags roughly
+    const raw = proxyData.contents || '';
+    articleText = raw.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                     .replace(/<[^>]+>/g, ' ')
+                     .replace(/\s+/g, ' ')
+                     .substring(0, 6000);
+    articleContext = articleText; // 質問欄用に保持
+  } catch(e) {
+    articleText = '（記事本文の取得に失敗しました。URLから推定します）';
+    articleContext = '';
+  }
+
+  const prompt = `以下は報道記事の本文テキストです。この内容を正確に分析してください。
+
+URL: ${url}
+ユーザー指定の優先キーワード: ${kwList}
+
+記事本文:
+${articleText}
+
+【重要な指示】
+- 人物の肩書きは必ず記事本文に書かれている通りに使うこと（例：本文に"President Trump"とあれば「トランプ大統領」、"former president"とあれば「前大統領」）
+- 自分の知識で肩書きを変えない
+- 背景解説・推測・AIの判断を出力に含めない
+- 原文の事実・数字・発言のみを使う
+
+以下のJSON形式のみで返してください（他のテキスト不要）:
+{
+  "source": "媒体名（日本語）",
+  "title_ja": "記事タイトル（日本語訳）",
+  "uploaded_at": "記事の公開日時（記事本文から取得。例: 2026-05-13 21:12 UTC）",
+  "author": "著者名（記事本文から取得）",
+  "impact_score": 1〜10の整数,
+  "impact_level": "HIGH" or "MID" or "LOW",
+  "impact_reason": "スコア理由（1文、原文の事実のみ）",
+  "score_breakdown": {
+    "地政学的重要度": 1〜10,
+    "死傷者・人道的影響": 1〜10,
+    "経済・エネルギー影響": 1〜10,
+    "外交的展開": 1〜10,
+    "キーワード一致": 1〜10
+  },
+  "summary_ja": "原文準拠の要約（250〜400字、文語体。記事中の具体的な数字・人名・地名・日付・発言を積極的に含める。背景解説や推測は含めず原文の事実のみ）",
+  "colloquial_ja": "口語体の音声読み上げ用要約。以下の構成で書く：①冒頭に媒体名と状況を一言。②記事中の具体的な数字を必ず含めた事実。③『これって例えば〜みたいなことで』という形で原文から読み取れる具体的な影響例を2つ。④締めの一言。各文を句点（。）で必ず区切ること。話し言葉で自然に。背景解説・推測・AIの判断は一切含めない。",
+  "detail_ja": "高インパクト時の追加情報（300〜500字、原文から読み取れる事実・数字・当事者の発言のみ。推測・背景解説・AIの判断を含めない）",
+  "keywords_found": ["記事中の重要キーワードを5〜8個"]
+}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1800,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const raw = data.content[0].text;
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+
+    renderResult(result);
+
+    // AI質問欄をリセットして表示
+    aiChatHistory = [];
+    document.getElementById('aiMessages').innerHTML = '';
+    document.getElementById('aiQuestionSection').classList.add('visible');
+
+    if (result.keywords_found) {
+      result.keywords_found.forEach(kw => {
+        if (!DEFAULT_KEYWORDS.includes(kw)) DEFAULT_KEYWORDS.push(kw);
+      });
+      renderKeywords();
+    }
+
+  } catch (e) {
+    showError('エラー: ' + e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderResult(r) {
+  // Impact badge
+  const badge = document.getElementById('impactBadge');
+  badge.textContent = r.impact_level === 'HIGH' ? '🔴 HIGH' : r.impact_level === 'MID' ? '🟡 MID' : '⚪ LOW';
+  badge.className = 'impact-badge ' + (r.impact_level === 'HIGH' ? 'impact-high' : r.impact_level === 'MID' ? 'impact-mid' : 'impact-low');
+
+  document.getElementById('sourceTag').textContent = r.source || '—';
+  document.getElementById('uploadedAt').textContent = r.uploaded_at || '—';
+  document.getElementById('cardTitle').textContent = r.title_ja || '—';
+  document.getElementById('cardMeta').textContent = `著者: ${r.author || '—'} ｜ インパクトスコア: ${r.impact_score}/10 ｜ ${r.impact_reason || ''}`;
+
+  // 口語テキストに誤読修正を適用して保存
+  const colloquialFixed = applyMisreadFix(r.colloquial_ja || '—');
+  document.getElementById('colloquialText').textContent = colloquialFixed;
+  document.getElementById('summaryText').textContent = r.summary_ja || '—';
+
+  // Page 2
+  const isHigh = r.impact_level === 'HIGH';
+  document.getElementById('page2Tab').style.display = isHigh ? 'block' : 'none';
+  document.getElementById('detailText').textContent = r.detail_ja || '—';
+
+  // Score breakdown
+  const sb = r.score_breakdown || {};
+  const sbEl = document.getElementById('scoreBreakdown');
+  sbEl.innerHTML = Object.entries(sb).map(([k, v]) => `
+    <div class="score-row">
+      <span>${k}</span>
+      <span class="score-val">${v}/10</span>
+    </div>
+  `).join('');
+
+  switchPage(1);
+  document.getElementById('resultCard').classList.add('visible');
+
+  // Prepare speech
+  stopSpeech();
+  document.getElementById('playBtn').textContent = '▶';
+}
+
+// --- Page switch ---
+function switchPage(n) {
+  currentPage = n;
+  document.querySelectorAll('.page-tab').forEach((t, i) => t.classList.toggle('active', i + 1 === n));
+  document.querySelectorAll('.page-content').forEach((c, i) => c.classList.toggle('active', i + 1 === n));
+}
+
+// --- Speech ---
+let sentenceQueue = [];
+let sentenceIndex = 0;
+let sentenceTotalChars = 0;
+
+function toggleSpeech() {
+  if (isSpeaking) { stopSpeech(); return; }
+  startSpeech();
+}
+
+function startSpeech() {
+  const text = document.getElementById('colloquialText').textContent;
+  if (!text || text === '—') return;
+  stopSpeech();
+
+  // Split into sentences by 。
+  sentenceQueue = text.split('。').map(s => s.trim()).filter(s => s.length > 0);
+  sentenceIndex = 0;
+  sentenceTotalChars = text.length;
+  let spokenChars = 0;
+
+  const estSeconds = Math.ceil(sentenceTotalChars / 6);
+  elapsedSeconds = 0;
+  document.getElementById('durationLabel').textContent = '0:00 / ' + formatTime(estSeconds);
+  isSpeaking = true;
+  document.getElementById('playBtn').textContent = '⏸';
+
+  speechTimer = setInterval(() => {
+    elapsedSeconds++;
+    const pct = Math.min((elapsedSeconds / estSeconds) * 100, 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('durationLabel').textContent = formatTime(elapsedSeconds) + ' / ' + formatTime(estSeconds);
+  }, 1000);
+
+  function speakNext() {
+    if (sentenceIndex >= sentenceQueue.length || !isSpeaking) {
+      isSpeaking = false;
+      document.getElementById('playBtn').textContent = '▶';
+      clearInterval(speechTimer);
+      document.getElementById('progressFill').style.width = '100%';
+      return;
+    }
+
+    const sentence = sentenceQueue[sentenceIndex] + '。';
+    sentenceIndex++;
+
+    const utt = new SpeechSynthesisUtterance(sentence);
+    utt.lang = 'ja-JP';
+    utt.rate = 1.0;
+    utt.pitch = 1.0;
+
+    utt.onend = () => {
+      // 文間に600msの間を入れる
+      setTimeout(() => speakNext(), 600);
+    };
+
+    window.speechSynthesis.speak(utt);
+  }
+
+  speakNext();
+}
+
+function stopSpeech() {
+  window.speechSynthesis.cancel();
+  isSpeaking = false;
+  sentenceIndex = sentenceQueue.length; // prevent next sentence
+  clearInterval(speechTimer);
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('progressFill').style.width = '0%';
+  elapsedSeconds = 0;
+}
+
+function formatTime(s) {
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// --- AI Question ---
+async function askAI() {
+  const input = document.getElementById('aiQuestionInput');
+  const question = input.value.trim();
+  if (!question) return;
+  if (!apiKey) return showError('APIキーを先に保存してください');
+
+  lastQuestion = question; // コピー用に保持
+  input.value = '';
+  document.getElementById('externalBtns').style.display = 'none'; // ボタン一時非表示
+  document.getElementById('aiAskBtn').disabled = true;
+
+  // ユーザーメッセージ表示
+  appendAiMessage('user', question);
+
+  // 履歴に追加
+  aiChatHistory.push({ role: 'user', content: question });
+
+  // システムプロンプト
+  const systemPrompt = `あなたは中東ニュースの解説アシスタントです。
+以下の記事本文をもとに質問に答えてください。
+記事本文の事実を優先しますが、背景知識・文脈・歴史的経緯も使って答えてください。
+回答は簡潔に200字以内を目安にしてください。
+日本語で答えてください。
+
+【記事本文】
+${articleContext || '（記事本文なし）'}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        system: systemPrompt,
+        messages: aiChatHistory
+      })
+    });
+
+    const data = await res.json();
+    const answer = data.content[0].text;
+
+    aiChatHistory.push({ role: 'assistant', content: answer });
+    appendAiMessage('assistant', answer);
+    // 回答後にボタンを再表示（最後の質問付き）
+    document.getElementById('externalBtns').style.display = 'flex';
+
+  } catch(e) {
+    appendAiMessage('assistant', 'エラーが発生しました: ' + e.message);
+  } finally {
+    document.getElementById('aiAskBtn').disabled = false;
+  }
+}
+
+function appendAiMessage(role, text) {
+  const container = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${role}`;
+  const label = role === 'user' ? 'あなた' : '🤖 AI（背景知識含む）';
+  div.innerHTML = `<div class="ai-msg-label">${label}</div><div>${text}</div>`;
+  container.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// --- External app buttons ---
+function buildPrompt(question) {
+  const title = document.getElementById('cardTitle').textContent;
+  const source = document.getElementById('sourceTag').textContent;
+  const summary = document.getElementById('summaryText').textContent;
+  const articleSnippet = articleContext ? articleContext.substring(0, 2000) : '（本文なし）';
+  return `以下は${source}の記事「${title}」の要約と本文抜粋です。
+
+【要約】
+${summary}
+
+【本文抜粋】
+${articleSnippet}
+
+【質問】
+${question}
+
+原文に書かれている事実を優先しつつ、背景知識も使って日本語で答えてください。背景知識を使った部分は明示してください。`;
+}
+
+function copyPrompt() {
+  const inputVal = document.getElementById('aiQuestionInput').value.trim();
+  const question = inputVal || lastQuestion || '（質問を入力してください）';
+  const prompt = buildPrompt(question);
+  navigator.clipboard.writeText(prompt).then(() => {
+    showError('クリップボードにコピーしました。AIアプリに貼り付けてください。', false);
+  }).catch(() => {
+    showError('コピーに失敗しました。手動でコピーしてください。');
+  });
+}
+
+function openClaude() {
+  copyPrompt();
+  setTimeout(() => window.open('https://claude.ai/new', '_blank'), 300);
+}
+
+function openChatGPT() {
+  copyPrompt();
+  setTimeout(() => window.open('https://chatgpt.com/', '_blank'), 300);
+}
+
+// --- UI helpers ---
+function setLoading(v) {
+  document.getElementById('loadingEl').classList.toggle('visible', v);
+  document.getElementById('analyzeBtn').disabled = v;
+}
+
+function showError(msg, isError = true) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--danger)' : 'var(--accent)';
+  el.style.background = isError ? '#e05a5a11' : '#c8a96e11';
+  el.style.borderColor = isError ? '#e05a5a44' : '#c8a96e44';
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 3000);
+}
+
+function hideError() {
+  document.getElementById('errorMsg').classList.remove('visible');
+}
+
+// Enter key
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  document.getElementById('articleUrl').addEventListener('keydown', e => {
+    if (e.key === 'Enter') analyzeArticle();
+  });
+  const qInput = document.getElementById('aiQuestionInput');
+  const extBtns = document.getElementById('externalBtns');
+  qInput.addEventListener('input', () => {
+    extBtns.style.display = qInput.value.trim().length > 0 ? 'flex' : 'none';
+  });
+  qInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') askAI();
+  });
+});
+</script>
+
+</body>
+</html>
